@@ -34,20 +34,6 @@ No internet required
 
 Privacy-safe
 
-📦 Project Structure
-SmartVision/
-│
-├─ main.py                # Kivy application
-├─ util.py                # YOLO preprocessing + postprocessing
-├─ names.py               # Class label names
-├─ requirements.txt       # Desktop requirements
-├─ requirements_android.txt
-├─ assets/
-│   ├─ best_float32.tflite
-│   ├─ demo.gif
-│   └─ icons/
-└─ README.md
-
 🧠 Model Information
 
 Format: TensorFlow Lite (.tflite)
