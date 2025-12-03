@@ -149,8 +149,7 @@ class CameraApp(App):
         if running and cap:
             ret, frame = cap.read()
             if ret:
-
-                # Fix upside-down camera
+            
                 frame = cv2.flip(frame, 0)
 
                 rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -167,7 +166,7 @@ class CameraApp(App):
 
                 # Speak detected labels
                 for box, score, cls in zip(boxes, scores, classes):
-                    if score < 0.25:   # lower threshold
+                    if score < 0.25:   
                         continue
 
                     label = NAMES.get(int(cls), "Unknown")
