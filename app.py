@@ -58,7 +58,7 @@ last_speak_time = 0
 # Load TFLite model
 # -----------------------------
 interpreter = tf.lite.Interpreter(
-    model_path="/Users/apple/Downloads/kivytry/best_float32.tflite"
+    model_path="Your Path"
 )
 interpreter.allocate_tensors()
 
