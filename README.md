@@ -1,117 +1,190 @@
-📱 Smart Vision App
-AI-Powered Real-Time Object Recognition for Blind & Visually Impaired Users
-<img src="demo.gif" alt="Demo GIF" width="500"/>
+# 📱 Smart Vision App
 
-Smart Vision App is a mobile application built with Kivy, TensorFlow Lite, and YOLO that performs real-time object detection from the device camera and speaks the detected objects aloud using offline TTS.
-Designed to help visually-impaired users navigate safely.
+**AI-powered real-time object detection with spoken alerts for blind and visually-impaired users.**
 
-🚀 Features
-👁️ Real-Time Object Detection
+Built with Kivy · TensorFlow Lite · YOLOv8
 
-YOLOv8-style TensorFlow Lite model
+<img src="demo.gif" alt="Demo — Smart Vision detecting pedestrians and traffic lights" width="520"/>
 
-Detects people, vehicles, obstacles, traffic signs, etc.
+---
 
-Optimized for CPU (Android/iOS compatible)
+## ✨ Features
 
-🔊 Text-to-Speech Alerts
+| Feature | Details |
+|---|---|
+| **Real-time detection** | YOLOv8 TFLite model running at 20–30 FPS on mid-range devices |
+| **Spoken alerts** | Plyer TTS announces objects in natural language ("Car ahead", "Red light, stop") |
+| **Smart cooldown** | Each class has an independent cooldown timer — no repeated spamming |
+| **Priority alerts** | People, crossroads, and red lights use a shorter cooldown for faster re-announcement |
+| **Bounding box overlay** | Colour-coded boxes with confidence scores drawn on the live feed |
+| **Threaded inference** | Model runs on a background thread — the UI never drops frames waiting for inference |
+| **Offline & private** | Fully on-device; no internet connection required |
+| **Clear error messages** | Missing model file produces a readable screen, not a cryptic crash |
 
-Uses Plyer TTS to verbally announce detected objects
+---
 
-Smart cooldown prevents repeated spam announcements
+## 🧠 Model
 
-🎥 Live Camera Preview
+| Property | Value |
+|---|---|
+| Format | TensorFlow Lite (`.tflite`) |
+| Input size | 640 × 640 px |
+| Output shape | `(1, 30, 8400)` |
+| Classes | 26 custom categories |
+| Architecture | YOLOv8-style (no separate objectness score) |
 
-Built using Kivy’s high-performance texture pipeline
+### Detected classes
 
-Runs at 20–30 FPS on mid-range devices
+Bike (front/left/right) · Car (front/left/right) · Crossroad · Fence (front/left/right) ·
+Pedestrian Light (green/red) · Person (front/left/right) · Pole (front/left/right) ·
+Traffic Cone · Traffic Light (green/orange/red) · Trash Bin (left/right) · Tree (front/right)
 
-📱 Mobile-First & Offline
+---
 
-Runs entirely on-device
+## 📂 Project structure
 
-No internet required
+```
+smart-vision-app/
+├── app.py            # Kivy UI, camera loop, app entry point
+├── config.py         # All tuneable settings (thresholds, paths, cooldowns)
+├── names.py          # Class index → label map + spoken alert phrases
+├── util.py           # Preprocessing, YOLO decode, NMS, bounding-box drawing
+├── requirements.txt  # Python dependencies
+├── model/
+│   └── best_float32.tflite   ← place your model here (not in git)
+└── LICENSE
+```
 
-Privacy-safe
+---
 
-🧠 Model Information
+## 🛠 Installation (desktop / development)
 
-Format: TensorFlow Lite (.tflite)
+**Requirements:** Python 3.10+
 
-Input size: 640×640
-
-Output shape: (1, 30, 8400)
-
-Trained on custom dataset with 26 object categories (bikes, cars, pedestrians, fences, trees, cones, lights, etc.)
-
-🛠 Installation (Desktop)
-
-You need Python 3.10:
+```bash
+git clone https://github.com/your-username/smart-vision-app.git
+cd smart-vision-app
 
 pip install -r requirements.txt
-python main.py
 
-📱 Build for Android (Buildozer)
+# Place your TFLite model in the model/ directory
+cp /path/to/best_float32.tflite model/
 
-Install Buildozer:
+python app.py
+```
 
+> **Webcam access** — the app opens camera index `0` by default.
+> Change `cv2.VideoCapture(0)` in `app.py` if you need a different index.
+
+---
+
+## ⚙️ Configuration
+
+All tuneable values are in **`config.py`** — no need to touch app logic:
+
+```python
+CONF_THRESHOLD  = 0.30   # minimum detection confidence (0–1)
+NMS_THRESHOLD   = 0.45   # IoU overlap threshold for NMS
+TARGET_FPS      = 30     # camera polling rate
+TTS_COOLDOWN    = 3.0    # seconds before the same class is announced again
+PRIORITY_COOLDOWN = 1.5  # shorter cooldown for high-priority classes
+```
+
+**To add or change priority classes**, edit the `PRIORITY_CLASSES` set:
+
+```python
+PRIORITY_CLASSES = {
+    "Person Front",
+    "Crossroad",
+    "Pedestrian Light Red",
+    "Traffic Light Red",
+}
+```
+
+**To customise the spoken phrases**, edit `ALERT_PHRASES` in `names.py`:
+
+```python
+"Car Front": "Car directly ahead, be careful",
+```
+
+---
+
+## 📱 Build for Android (Buildozer)
+
+```bash
 pip install buildozer
 buildozer init
+```
 
+Edit `buildozer.spec`:
 
-Edit buildozer.spec:
-
+```ini
+source.include_exts = py,png,jpg,kv,atlas,tflite
 requirements = python3,kivy,plyer,numpy,opencv-python-headless,tensorflow-lite
-android.permissions = CAMERA, RECORD_AUDIO
+android.permissions = CAMERA
+```
 
+Build:
 
-Then build:
-
+```bash
 buildozer -v android debug
+# APK appears in bin/
+```
 
+---
 
-APK will appear in the bin/ folder.
+## 🍎 Build for iOS (Kivy-iOS)
 
-🍎 Build for iOS (Kivy-iOS)
-
-Install Kivy-iOS:
-
+```bash
 pip install kivy-ios
 toolchain build python3 kivy plyer
 toolchain build tensorflow-lite
-toolchain create smartvision main.py
+toolchain create smartvision app.py
 toolchain xcode smartvision
+```
 
-🧩 Code Example
-Running inference in the app:
-input_data = preprocess(frame)[0]
-interpreter.set_tensor(input_index, input_data)
-interpreter.invoke()
+---
 
-raw_output = interpreter.get_tensor(output_index)
-detections = parse_yolo_output(raw_output)
-detections = nms(detections)
+## 🔧 How it works
 
-🎯 Future Improvements
+```
+Camera frame
+    │
+    ▼
+preprocess()          BGR → RGB, resize to 640×640, normalise 0–1
+    │
+    ▼  (background thread)
+TFLite interpreter    invoke() → raw tensor (1, 30, 8400)
+    │
+    ▼
+parse_yolo_output()   decode cx/cy/w/h + class scores → pixel-space boxes
+    │
+    ▼
+apply_nms()           remove overlapping duplicates
+    │
+    ├──► draw_detections()   annotate frame for display
+    │
+    └──► Announcer.speak()   TTS with per-class cooldown
+```
 
-Add vibration feedback for critical objects
+---
 
-Add navigation mode (crosswalk detection)
+## 🎯 Roadmap
 
-Add voice commands
+- [ ] Vibration feedback for critical detections (no audio required)
+- [ ] Navigation mode with distance estimation
+- [ ] Voice commands ("what's in front of me?")
+- [ ] Android TalkBack / Apple VoiceOver integration
+- [ ] Multi-language TTS support
 
-Add Apple VoiceOver & Android TalkBack integration
+---
 
-Improve UI design
+## 🤝 Contributing
 
-🤝 Contributing
+Pull requests are welcome — model improvements, new alert phrases, UI work, or mobile build fixes.
 
-Pull requests, model improvements, and new features are welcome!
+---
 
-📜 License
+## 📜 License
 
-This project is licensed under the MIT License — free for personal and commercial use.
-
-⭐ Showcase Your Work!
-
-If this project helped inspire your own, please ⭐ the repo!
+MIT — free for personal and commercial use. See [LICENSE](LICENSE).
